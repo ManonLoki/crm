@@ -4,6 +4,7 @@ use prost_types::Timestamp;
 
 use crate::pb::User;
 
+// 为生成的代码 实现一些蝉蛹函数
 impl User {
     pub fn new(id: u64, name: &str, email: &str) -> Self {
         let now = SystemTime::now()

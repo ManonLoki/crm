@@ -1,24 +1,35 @@
+// 标识Protobuf版本
 syntax = "proto3";
-
+// 包名 对应生成文件名
 package crm;
-
+// 引入TimeStamp
 import "google/protobuf/timestamp.proto";
 
+// User定义
 message User {
+  // ID -> u64
   uint64 id = 1;
+  // 名称 -> String
   string name = 2;
+  // Email -> String
   string email = 3;
+  // 创建时间 -> Option<TimeStamp>
   google.protobuf.Timestamp created_at = 4;
 }
 
+// 获取User Request Model
 message GetUserRequest { uint64 id = 1; }
-
+// 创建User Request Model
 message CreateUserRequest {
   string name = 1;
   string email = 2;
 }
 
+// RPC定义
 service UserService {
+  // 获取User
   rpc GetUser(GetUserRequest) returns (User) {}
+
+  // 创建User
   rpc CreateUser(CreateUserRequest) returns (User) {}
 }
