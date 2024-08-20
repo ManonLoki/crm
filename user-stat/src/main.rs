@@ -2,7 +2,7 @@ use anyhow::Result;
 use tonic::transport::Server;
 use tracing::{info, level_filters::LevelFilter};
 use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, util::SubscriberInitExt, Layer as _};
-use user_stat::{config::AppConfig, UserStatsService};
+use user_stat::{AppConfig, UserStatsService};
 
 #[tokio::main]
 async fn main() -> Result<()> {

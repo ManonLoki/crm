@@ -9,7 +9,7 @@ use pb::{
 use tonic::{async_trait, Request, Response, Status, Streaming};
 
 pub mod config;
-mod pb;
+pub mod pb;
 
 type ServiceResult<T> = Result<Response<T>, Status>;
 type ResponseStream = Pin<Box<dyn Stream<Item = Result<Content, Status>> + Send>>;

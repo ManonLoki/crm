@@ -1,8 +1,9 @@
 mod abi;
 mod config;
-mod pb;
+pub mod pb;
 
-use config::AppConfig;
+pub use config::AppConfig;
+
 use futures::Stream;
 use pb::{notification_server::Notification, send_request::Msg, SendRequest, SendResponse};
 use std::{pin::Pin, sync::Arc};

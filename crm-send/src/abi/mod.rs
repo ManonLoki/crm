@@ -19,6 +19,7 @@ use crate::{
 
 const CHANNEL_SIZE: usize = 1024;
 
+#[allow(async_fn_in_trait)]
 pub trait Sender {
     async fn send(self, svc: NotificationService) -> Result<SendResponse, Status>;
 }
