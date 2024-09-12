@@ -1,4 +1,5 @@
 use anyhow::Result;
+use proto_builder_trait::tonic::BuilderAttributes;
 use std::fs;
 
 fn main() -> Result<()> {
@@ -8,9 +9,15 @@ fn main() -> Result<()> {
     tonic_build::configure()
         // 输出到src/pb
         .out_dir("src/pb")
-        // 编译列表 crm.protocol
-        // 包含其他数据 ../protos
-        .compile(&["../protos/crm/crm.proto"], &["../protos"])?;
+        .with_derive_builder(&["WelcomeRequest", "RecallRequest", "RemindRequest"], None)
+        .with_field_attributes(
+            &["WelcomeRequest.content_ids"],
+            &[r#"#[builder(setter(each(name="content_id",into)))]"#],
+        )
+        .compile(
+            &["../protos/crm/messages.proto", "../protos/crm/rpc.proto"],
+            &["../protos"],
+        )?;
 
     Ok(())
 }

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package crm;
+
+import "crm/messages.proto";
+
+service Crm {
+  // 用户注册了N天之后，给他们一个欢迎消息
+  rpc Welcome(WelcomeRequest) returns (WelcomeResponse);
+  // 用户最后一次观看时间超过N天，给他们一些推荐的内容
+  rpc Recall(RecallRequest) returns (RecallResponse);
+  // 用户最后登录时间超过N天，并且他们没有看完的内容，提醒他们
+  rpc Remind(RemindRequest) returns (RemindResponse);
+}

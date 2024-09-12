@@ -4,22 +4,26 @@ mod sms;
 use std::{ops::Deref, sync::Arc, time::Duration};
 
 use chrono::Utc;
+use crm_metadata::{pb::Content, Tpl};
 use futures::{Stream, StreamExt};
 use prost_types::Timestamp;
 use tokio::{sync::mpsc, time::sleep};
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Response, Status};
 use tracing::info;
+use uuid::Uuid;
 
 use crate::{
     config::AppConfig,
-    pb::{notification_server::NotificationServer, send_request::Msg, SendRequest, SendResponse},
+    pb::{
+        notification_server::NotificationServer, send_request::Msg, EmailMessage, SendRequest,
+        SendResponse,
+    },
     NotificationService, NotificationServiceInner, ResponseStream, ServiceResult,
 };
 
 const CHANNEL_SIZE: usize = 1024;
 
-#[allow(async_fn_in_trait)]
 pub trait Sender {
     async fn send(self, svc: NotificationService) -> Result<SendResponse, Status>;
 }
@@ -71,6 +75,26 @@ impl Deref for NotificationService {
     }
 }
 
+impl SendRequest {
+    pub fn new(
+        subject: String,
+        sender: String,
+        recipients: &[String],
+        contents: &[Content],
+    ) -> Self {
+        let tpl = Tpl(contents);
+        let msg = Msg::Email(EmailMessage {
+            message_id: Uuid::new_v4().to_string(),
+            subject,
+            sender,
+            recipients: recipients.to_vec(),
+            body: tpl.to_body(),
+        });
+
+        SendRequest { msg: Some(msg) }
+    }
+}
+
 fn dummy_send() -> mpsc::Sender<Msg> {
     let (tx, mut rx) = mpsc::channel(CHANNEL_SIZE * 100);
 
@@ -89,5 +113,31 @@ fn to_ts() -> Timestamp {
     Timestamp {
         seconds: now.timestamp(),
         nanos: now.timestamp_subsec_nanos() as i32,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::pb::{EmailMessage, InAppMessage, SmsMessage};
+    use anyhow::Result;
+    use futures::StreamExt;
+
+    #[tokio::test]
+    async fn send_should_work() -> Result<()> {
+        let config = AppConfig::load()?;
+        let service = NotificationService::new(config);
+        let stream = tokio_stream::iter(vec![
+            Ok(EmailMessage::fake().into()),
+            Ok(SmsMessage::fake().into()),
+            Ok(InAppMessage::fake().into()),
+        ]);
+
+        let response = service.send(stream).await?;
+
+        let ret = response.into_inner().collect::<Vec<_>>().await;
+        assert_eq!(ret.len(), 3);
+        Ok(())
     }
 }

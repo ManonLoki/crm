@@ -1,47 +1,24 @@
 use anyhow::Result;
-use crm::pb::{
-    user_service_server::{UserService, UserServiceServer},
-    CreateUserRequest, GetUserRequest, User,
+
+use crm::{AppConfig, CrmService};
+use tonic::transport::Server;
+use tracing::{info, level_filters::LevelFilter};
+use tracing_subscriber::{
+    fmt::Layer, layer::SubscriberExt as _, util::SubscriberInitExt, Layer as _,
 };
-use tonic::{async_trait, transport::Server, Request, Response, Status};
-
-/// 创建一个数据结构 用于存储许需要的数据
-#[derive(Default)]
-pub struct UserServer {}
-
-// 实现RPC定义
-#[async_trait]
-impl UserService for UserServer {
-    // 获取User
-    async fn get_user(&self, request: Request<GetUserRequest>) -> Result<Response<User>, Status> {
-        let input = request.into_inner();
-        println!("get_user: {:?}", input);
-        Ok(Response::new(User::default()))
-    }
-    // 创建User
-    async fn create_user(
-        &self,
-        request: Request<CreateUserRequest>,
-    ) -> Result<Response<User>, Status> {
-        let input = request.into_inner();
-        println!("create_user: {:?}", input);
-        let user = User::new(1, &input.name, &input.email);
-        Ok(Response::new(user))
-    }
-}
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // 监听端口
-    let addr = "[::1]:50051".parse().unwrap();
-    // 创建Server实例
-    let svc = UserServer::default();
+    let layer = Layer::new().with_filter(LevelFilter::INFO);
+    tracing_subscriber::registry().with(layer).init();
+    let config = AppConfig::load().expect("Failed to load Config");
+    let addr = config.server.port;
+    let addr = format!("[::1]:{}", addr).parse().unwrap();
+    info!("CRM service listening on {}", addr);
 
-    println!("UserService listening on {}", addr);
-    // 构建Server 这里的UserServiceServer是RPC生成的，将实例传入进去即可
-    Server::builder()
-        .add_service(UserServiceServer::new(svc))
-        .serve(addr)
-        .await?;
+    let svc = CrmService::try_new(config).await?.into_server();
+    Server::builder().add_service(svc).serve(addr).await?;
+
     Ok(())
 }

@@ -36,29 +36,3 @@ impl Notification for NotificationService {
         self.send(stream).await
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use anyhow::Result;
-    use futures::StreamExt;
-    use pb::{EmailMessage, InAppMessage, SmsMessage};
-
-    #[tokio::test]
-    async fn send_should_work() -> Result<()> {
-        let config = AppConfig::load()?;
-        let service = NotificationService::new(config);
-        let stream = tokio_stream::iter(vec![
-            Ok(EmailMessage::fake().into()),
-            Ok(SmsMessage::fake().into()),
-            Ok(InAppMessage::fake().into()),
-        ]);
-
-        let response = service.send(stream).await?;
-
-        let ret = response.into_inner().collect::<Vec<_>>().await;
-        assert_eq!(ret.len(), 3);
-        Ok(())
-    }
-}

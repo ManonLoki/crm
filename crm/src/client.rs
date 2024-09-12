@@ -1,22 +1,24 @@
 use anyhow::Result;
-use crm::pb::{user_service_client::UserServiceClient, CreateUserRequest};
+
+use crm::{
+    pb::{crm_client::CrmClient, WelcomeRequestBuilder},
+    AppConfig,
+};
 use tonic::Request;
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Connect到监听地址
-    let mut client = UserServiceClient::connect("http://[::1]:50051").await?;
+    let config = AppConfig::load()?;
+    let mut client = CrmClient::connect(format!("http://[::1]:{}", config.server.port)).await?;
 
-    // 创建调用Request
-    let request = Request::new(CreateUserRequest {
-        name: "ManonLoki".to_string(),
-        email: "manonloki@gmail.com".to_string(),
-    });
+    let req = WelcomeRequestBuilder::default()
+        .id(Uuid::new_v4().to_string())
+        .interval(93u32)
+        .content_ids([1u32, 2, 3])
+        .build()?;
 
-    // 获取响应
-    let response = client.create_user(request).await?;
-
+    let response = client.welcome(Request::new(req)).await?.into_inner();
     println!("RESPONSE={:?}", response);
-
     Ok(())
 }

@@ -1,5 +1,6 @@
 use std::pin::Pin;
 mod abi;
+pub use abi::Tpl;
 use config::AppConfig;
 use futures::Stream;
 use pb::{
@@ -7,7 +8,6 @@ use pb::{
     Content, MaterializeRequest,
 };
 use tonic::{async_trait, Request, Response, Status, Streaming};
-
 pub mod config;
 pub mod pb;
 
