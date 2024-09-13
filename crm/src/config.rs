@@ -6,6 +6,7 @@ use std::{env, fs::File};
 pub struct AppConfig {
     pub server: ServerConfig,
     pub auth: AuthConfig,
+    pub tls: Option<TlsConfig>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,6 +21,12 @@ pub struct ServerConfig {
     pub metadata: String,
     pub user_stats: String,
     pub notification: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TlsConfig {
+    pub cert: String,
+    pub key: String,
 }
 
 impl AppConfig {

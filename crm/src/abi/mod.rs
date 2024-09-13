@@ -1,3 +1,5 @@
+pub mod auth;
+
 use std::sync::Arc;
 
 use chrono::{Duration, Utc};

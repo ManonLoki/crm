@@ -4,13 +4,33 @@ use crm::{
     pb::{crm_client::CrmClient, WelcomeRequestBuilder},
     AppConfig,
 };
-use tonic::Request;
+use tonic::{
+    metadata::MetadataValue,
+    transport::{Certificate, Channel, ClientTlsConfig},
+    Request,
+};
 use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let pem = include_str!("../../fixtures/rootCA.pem");
+    let tls = ClientTlsConfig::new()
+        .ca_certificate(Certificate::from_pem(pem))
+        .domain_name("localhost");
     let config = AppConfig::load()?;
-    let mut client = CrmClient::connect(format!("http://[::1]:{}", config.server.port)).await?;
+    let addr = format!("https://[::1]:{}", config.server.port);
+    let channel = Channel::from_static(addr.leak())
+        .tls_config(tls)?
+        .connect()
+        .await?;
+
+    let token = include_str!("../../fixtures/token").trim();
+    let token: MetadataValue<_> = format!("Bearer {}", token).parse()?;
+
+    let mut client = CrmClient::with_interceptor(channel, move |mut req: Request<()>| {
+        req.metadata_mut().insert("Authoriziation", token.clone());
+        Ok(req)
+    });
 
     let req = WelcomeRequestBuilder::default()
         .id(Uuid::new_v4().to_string())
